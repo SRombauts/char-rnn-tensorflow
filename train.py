@@ -117,6 +117,7 @@ def train(args):
             state = sess.run(model.initial_state)
             for b in range(data_loader.num_batches):
                 start = time.time()
+                batch_num = e * data_loader.num_batches + b 
                 x, y = data_loader.next_batch()
                 feed = {model.input_data: x, model.targets: y}
                 for i, (c, h) in enumerate(model.initial_state):
@@ -126,20 +127,20 @@ def train(args):
 
                 # instrument for tensorboard
                 summ, train_loss, state, _ = sess.run([summaries, model.cost, model.final_state, model.train_op], feed)
-                writer.add_summary(summ, e * data_loader.num_batches + b)
+                writer.add_summary(summ, batch_num)
 
                 end = time.time()
                 print("{}/{} (epoch {}), train_loss = {:.3f}, time/batch = {:.3f}"
-                      .format(e * data_loader.num_batches + b,
+                      .format(batch_num,
                               args.num_epochs * data_loader.num_batches,
                               e, train_loss, end - start))
-                if (e * data_loader.num_batches + b) % args.save_every == 0\
+                if (batch_num > 0 and batch_num % args.save_every == 0) \
                         or (e == args.num_epochs-1 and
                             b == data_loader.num_batches-1):
                     # save for the last result
                     checkpoint_path = os.path.join(args.save_dir, 'model.ckpt')
                     saver.save(sess, checkpoint_path,
-                               global_step=e * data_loader.num_batches + b)
+                               global_step=batch_num)
                     print("model saved to {}".format(checkpoint_path))
 
 
