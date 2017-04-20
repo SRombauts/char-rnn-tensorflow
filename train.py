@@ -5,6 +5,8 @@ import argparse
 import time
 import os
 from six.moves import cPickle
+from collections import deque
+import numpy as np
 
 from utils import TextLoader
 from model import Model
@@ -96,6 +98,8 @@ def train(args):
     with open(os.path.join(args.save_dir, 'chars_vocab.pkl'), 'wb') as f:
         cPickle.dump((data_loader.chars, data_loader.vocab), f)
 
+    train_losses = deque(maxlen=1000)
+
     model = Model(args)
 
     with tf.Session() as sess:
@@ -130,10 +134,12 @@ def train(args):
                 writer.add_summary(summ, batch_num)
 
                 end = time.time()
-                print("{}/{} (epoch {}), train_loss = {:.3f}, time/batch = {:.3f}"
+                train_losses.append(train_loss)
+                train_losse_avg = np.mean(train_losses)
+                print("{}/{} (epoch {}), train_loss = {:.3f} (avg. {:.3f}), time/batch = {:.3f}"
                       .format(batch_num,
                               args.num_epochs * data_loader.num_batches,
-                              e, train_loss, end - start))
+                              e, train_loss, train_losse_avg, end - start))
                 if (batch_num > 0 and batch_num % args.save_every == 0) \
                         or (e == args.num_epochs-1 and
                             b == data_loader.num_batches-1):
