@@ -99,6 +99,7 @@ def train(args):
         cPickle.dump((data_loader.chars, data_loader.vocab), f)
 
     train_losses = deque(maxlen=1000)
+    train_losse_min = 9.999
 
     model = Model(args)
 
@@ -121,7 +122,7 @@ def train(args):
             state = sess.run(model.initial_state)
             for b in range(data_loader.num_batches):
                 start = time.time()
-                batch_num = e * data_loader.num_batches + b 
+                batch_num = e * data_loader.num_batches + b
                 x, y = data_loader.next_batch()
                 feed = {model.input_data: x, model.targets: y}
                 for i, (c, h) in enumerate(model.initial_state):
@@ -136,10 +137,12 @@ def train(args):
                 end = time.time()
                 train_losses.append(train_loss)
                 train_losse_avg = np.mean(train_losses)
-                print("{}/{} (epoch {}), train_loss = {:.3f} (avg. {:.3f}), time/batch = {:.3f}"
+                if len(train_losses) == 1000 and train_losse_avg < train_losse_min:
+                    train_losse_min = train_losse_avg
+                print("{}/{} (epoch {}), train_loss = {:.3f} (avg {:.3f} min {:.3f}), time/batch = {:.3f}"
                       .format(batch_num,
                               args.num_epochs * data_loader.num_batches,
-                              e, train_loss, train_losse_avg, end - start))
+                              e, train_loss, train_losse_avg, train_losse_min, end - start))
                 if (batch_num > 0 and batch_num % args.save_every == 0) \
                         or (e == args.num_epochs-1 and
                             b == data_loader.num_batches-1):
