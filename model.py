@@ -23,6 +23,10 @@ class Model():
         else:
             raise Exception("model type not supported: {}".format(args.model))
 
+        # Print network config at startup
+        print("Network model {}, hidden layer size {}, number of layers {}, sequence length {}"
+              .format(args.model, args.rnn_size, args.num_layers, args.seq_length))
+    
         cells = []
         for _ in range(args.num_layers):
             cell = cell_fn(args.rnn_size)
